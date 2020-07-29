@@ -1,0 +1,11 @@
+#!/bin/sh
+cd "$(dirname "${BASH_SOURCE[0]}")"
+mkdir -p /disk1/java/maven-repo/com/innoventsolutions
+mvn install:install-file \
+  -Dfile="./target/report-engine-0.0.1-SNAPSHOT.jar" \
+  -DgroupId="com.innoventsolutions" \
+  -DartifactId="report-engine" \
+  -Dversion="0.0.1-SNAPSHOT" \
+  -Dpackaging=jar \
+  -DgeneratePom=true \
+  -DlocalRepositoryPath=/disk1/java/maven-repo
