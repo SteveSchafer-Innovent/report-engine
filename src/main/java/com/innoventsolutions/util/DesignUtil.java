@@ -2,8 +2,12 @@ package com.innoventsolutions.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DesignUtil {
+	private static final Pattern STYLE_PATTERN = Pattern.compile("([a-zA-Z0-9_\\-]+) *: *(.*)");
+
 	private DesignUtil() {
 	}
 
@@ -11,18 +15,18 @@ public class DesignUtil {
 		final Map<String, String> map = new HashMap<>();
 		if (string != null) {
 			for (final String part : string.split(" *; *")) {
-				final int indexOfColon = part.indexOf(":");
-				String name;
-				String value;
-				if (indexOfColon >= 0) {
-					name = part.substring(0, indexOfColon);
-					value = part.substring(indexOfColon + 1);
+				if (part.trim().length() == 0) {
+					continue;
+				}
+				final Matcher matcher = STYLE_PATTERN.matcher(part);
+				if (matcher.matches()) {
+					final String name = matcher.group(1);
+					final String value = matcher.group(2);
+					map.put(name, value);
 				}
 				else {
-					name = part;
-					value = "";
+					System.out.println("Invalid style pattern: " + part);
 				}
-				map.put(name, value);
 			}
 		}
 		return map;
