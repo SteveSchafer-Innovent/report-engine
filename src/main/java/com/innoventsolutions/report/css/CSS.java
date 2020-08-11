@@ -26,6 +26,12 @@ import com.steadystate.css.dom.CSSValueImpl;
 import com.steadystate.css.parser.CSSOMParser;
 import com.steadystate.css.parser.SACParserCSS3;
 
+import cz.vutbr.web.css.CSSFactory;
+import cz.vutbr.web.css.CombinedSelector;
+import cz.vutbr.web.css.RuleSet;
+import cz.vutbr.web.css.StyleSheet;
+import cz.vutbr.web.csskit.Color;
+
 /**
  * Static CSS parsing methods and objects. This is independent of any kind of
  * output.
@@ -738,6 +744,22 @@ public class CSS {
 				};
 			}
 		});
+		factories.add(new StyleFactory() {
+			@Override
+			public String getName() {
+				return "background-color";
+			}
+
+			@Override
+			public Style parse(final CSSValueImpl cssValueImpl) {
+				return new Style() {
+					@Override
+					public void apply(final Applier applier) {
+						applier.applyBackgroundColor(cssValueImpl);
+					}
+				};
+			}
+		});
 		final Map<String, StyleFactory> map = new HashMap<>();
 		for (final StyleFactory factory : factories) {
 			map.put(factory.getName(), factory);
@@ -779,6 +801,43 @@ public class CSS {
 			}
 			System.out.println("get CSS values " + styleMap);
 			final String styleString = makeStylesString(styleMap);
+			System.out.println("styleString = " + styleString);
+			try {
+				final StyleSheet styleSheet = CSSFactory.parseString("*{" + styleString + "}",
+					null);
+				System.out.println("styleSheet.size = " + styleSheet.size());
+				styleSheet.forEach(ruleBlock -> {
+					final RuleSet ruleSet = (RuleSet) ruleBlock;
+					final CombinedSelector[] combinedSelectors = ruleSet.getSelectors();
+					System.out.println("combinedSelectors = " + (combinedSelectors == null ? "null"
+						: String.valueOf(combinedSelectors.length)));
+					ruleSet.forEach(declaration -> {
+						final String property = declaration.getProperty();
+						System.out.println("property = " + property);
+						declaration.forEach(term -> {
+							final Object value = term.getValue();
+							System.out.println("value = " + value);
+							if (value instanceof Color) {
+								final Color color = (Color) value;
+								System.out.println(
+									"color = " + color.getRed() + ", " + color.getGreen() + ", "
+										+ color.getBlue() + ", " + color.getAlpha());
+							}
+							else {
+								System.out.println("value class = " + value.getClass().getName());
+							}
+						});
+					});
+				});
+			}
+			catch (final IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			catch (final cz.vutbr.web.css.CSSException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			final InputSource source = new InputSource(new StringReader(styleString));
 			final CSSOMParser parser = new CSSOMParser(new SACParserCSS3());
 			try {
@@ -1015,6 +1074,8 @@ public class CSS {
 
 	public interface Applier {
 		void applyTextAlign(CSSValueImpl cssValueImpl);
+
+		void applyBackgroundColor(CSSValueImpl cssValueImpl);
 
 		void applyPadding(Side side, CSSValueImpl cssValueImpl);
 

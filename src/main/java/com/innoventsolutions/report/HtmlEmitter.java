@@ -3,6 +3,7 @@ package com.innoventsolutions.report;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -139,9 +140,10 @@ public class HtmlEmitter implements Emitter {
 			@Override
 			public String getContent() {
 				final long value = data.getValue(dataRowBinding.getDataRow());
-				final DecimalFormat format = data.getFormat();
+				final String format = data.getFormat();
 				if (format != null) {
-					return format.format(value);
+					final DecimalFormat df = new DecimalFormat(format);
+					return df.format(value);
 				}
 				return String.valueOf(value);
 			}
@@ -160,9 +162,10 @@ public class HtmlEmitter implements Emitter {
 			@Override
 			public String getContent() {
 				final double value = data.getValue(dataRowBinding.getDataRow());
-				final DecimalFormat format = data.getFormat();
+				final String format = data.getFormat();
 				if (format != null) {
-					return format.format(value);
+					final DecimalFormat df = new DecimalFormat(format);
+					return df.format(value);
 				}
 				return String.valueOf(value);
 			}
@@ -181,9 +184,10 @@ public class HtmlEmitter implements Emitter {
 			@Override
 			public String getContent() {
 				final Date value = data.getValue(dataRowBinding.getDataRow());
-				final DateFormat format = data.getFormat();
+				final String format = data.getFormat();
 				if (format != null) {
-					return format.format(value);
+					final DateFormat df = new SimpleDateFormat(format);
+					return df.format(value);
 				}
 				return String.valueOf(value);
 			}

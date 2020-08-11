@@ -1,5 +1,6 @@
 package com.innoventsolutions.report.css;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.RGBColor;
 
@@ -11,6 +12,7 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfDiv;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.steadystate.css.dom.CSSValueImpl;
 
@@ -60,7 +62,16 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	protected static BaseColor getColor(final CSSValueImpl cssValue) {
-		final RGBColor rgbColor = cssValue.getRGBColorValue();
+		RGBColor rgbColor;
+		try {
+			rgbColor = cssValue.getRGBColorValue();
+		}
+		catch (final DOMException e) {
+			System.out.println("DOM Exception");
+			System.err.println("DOM Exception " + e + " on " + cssValue);
+			Thread.dumpStack();
+			return BaseColor.BLACK;
+		}
 		final int red = (int) CSS.getColor(rgbColor.getRed());
 		final int green = (int) CSS.getColor(rgbColor.getGreen());
 		final int blue = (int) CSS.getColor(rgbColor.getBlue());
@@ -305,6 +316,27 @@ public class PdfApplier implements CSS.Applier {
 			System.out.println("Applying font-family: " + cssValueImpl + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
 			chunk.getFont().setFamily(family);
+		}
+	}
+
+	@Override
+	public void applyBackgroundColor(final CSSValueImpl cssValueImpl) {
+		if (element instanceof Chunk) {
+			System.out.println(
+				"Applying background-color: " + cssValueImpl + " to chunk " + element);
+			final Chunk chunk = (Chunk) element;
+			chunk.setBackground(getColor(cssValueImpl));
+		}
+		else if (element instanceof Rectangle) {
+			System.out.println(
+				"Applying background-color: " + cssValueImpl + " to rectangle " + element);
+			final Rectangle rectangle = (Rectangle) element;
+			rectangle.setBackgroundColor(getColor(cssValueImpl));
+		}
+		else if (element instanceof PdfDiv) {
+			System.out.println("Applying background-color: " + cssValueImpl + " to div " + element);
+			final PdfDiv div = (PdfDiv) element;
+			div.setBackgroundColor(getColor(cssValueImpl));
 		}
 	}
 }

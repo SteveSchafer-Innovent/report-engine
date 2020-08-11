@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -11,7 +12,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
@@ -33,18 +36,21 @@ import com.innoventsolutions.report.design.TextData;
 
 public class ExcelEmitter implements Emitter {
 	private final OutputStream outputStream;
-	private Sheet sheet = null;
+	private final Workbook workbook;
+	private final Sheet sheet;
+	private final DataFormat xlFormat;
 	private List<Column> columns;
 
 	public ExcelEmitter(final OutputStream outputStream) {
 		this.outputStream = outputStream;
+		workbook = new XSSFWorkbook();
+		sheet = workbook.createSheet("Report");
+		xlFormat = workbook.createDataFormat();
 	}
 
 	@Override
 	public void emit(final Stream<DataRowBinding> stream, final Table table) {
-		final Workbook workbook = new XSSFWorkbook();
 		try {
-			sheet = workbook.createSheet("Report");
 			final Font headerFont = workbook.createFont();
 			headerFont.setBold(true);
 			headerFont.setFontHeightInPoints((short) 14);
@@ -118,7 +124,6 @@ public class ExcelEmitter implements Emitter {
 					workbook.write(outputStream);
 				}
 				catch (final IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -127,7 +132,6 @@ public class ExcelEmitter implements Emitter {
 					outputStream.close();
 				}
 				catch (final IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -137,7 +141,6 @@ public class ExcelEmitter implements Emitter {
 				workbook.close();
 			}
 			catch (final IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -172,32 +175,42 @@ public class ExcelEmitter implements Emitter {
 				final List<ReportComponent> components = cell.getComponents();
 				if (components.size() == 1) {
 					final ReportComponent component = components.get(0);
+					final Cell xlCell = xlRow.createCell(colNum.getAndIncrement());
+					String format = null;
 					if (component instanceof Label) {
 						final Label label = (Label) component;
-						final String text = label.getText();
-						xlRow.createCell(colNum.getAndIncrement()).setCellValue(text);
+						final String value = label.getText();
+						xlCell.setCellValue(value);
 					}
 					else if (component instanceof TextData) {
 						final TextData data = (TextData) component;
 						final String value = data.getValue(dataRowBinding.getDataRow());
 						if (value != null) {
-							xlRow.createCell(colNum.getAndIncrement()).setCellValue(value);
+							xlCell.setCellValue(value);
 						}
 					}
 					else if (component instanceof IntegerData) {
 						final IntegerData data = (IntegerData) component;
 						final long value = data.getValue(dataRowBinding.getDataRow());
-						xlRow.createCell(colNum.getAndIncrement()).setCellValue(value);
+						xlCell.setCellValue(value);
+						format = data.getFormat();
 					}
 					else if (component instanceof FloatData) {
 						final FloatData data = (FloatData) component;
 						final double value = data.getValue(dataRowBinding.getDataRow());
-						xlRow.createCell(colNum.getAndIncrement()).setCellValue(value);
+						xlCell.setCellValue(value);
+						format = data.getFormat();
 					}
 					else if (component instanceof DateData) {
 						final DateData data = (DateData) component;
 						final Date value = data.getValue(dataRowBinding.getDataRow());
-						xlRow.createCell(colNum.getAndIncrement()).setCellValue(value);
+						xlCell.setCellValue(value);
+						format = data.getFormat();
+					}
+					if (format != null) {
+						final CellStyle xlStyle = workbook.createCellStyle();
+						xlStyle.setDataFormat(xlFormat.getFormat(format));
+						xlCell.setCellStyle(xlStyle);
 					}
 				}
 				else {
@@ -221,9 +234,10 @@ public class ExcelEmitter implements Emitter {
 						else if (component instanceof IntegerData) {
 							final IntegerData data = (IntegerData) component;
 							final long value = data.getValue(dataRowBinding.getDataRow());
-							final DecimalFormat format = data.getFormat();
+							final String format = data.getFormat();
 							if (format != null) {
-								sb.append(format.format(value));
+								final DecimalFormat df = new DecimalFormat(format);
+								sb.append(df.format(value));
 							}
 							else {
 								sb.append(String.valueOf(value));
@@ -232,9 +246,10 @@ public class ExcelEmitter implements Emitter {
 						else if (component instanceof FloatData) {
 							final FloatData data = (FloatData) component;
 							final double value = data.getValue(dataRowBinding.getDataRow());
-							final DecimalFormat format = data.getFormat();
+							final String format = data.getFormat();
 							if (format != null) {
-								sb.append(format.format(value));
+								final DecimalFormat df = new DecimalFormat(format);
+								sb.append(df.format(value));
 							}
 							else {
 								sb.append(String.valueOf(value));
@@ -243,9 +258,10 @@ public class ExcelEmitter implements Emitter {
 						else if (component instanceof DateData) {
 							final DateData data = (DateData) component;
 							final Date value = data.getValue(dataRowBinding.getDataRow());
-							final DateFormat format = data.getFormat();
+							final String format = data.getFormat();
 							if (format != null) {
-								sb.append(format.format(value));
+								final DateFormat df = new SimpleDateFormat(format);
+								sb.append(df.format(value));
 							}
 							else {
 								sb.append(String.valueOf(value));

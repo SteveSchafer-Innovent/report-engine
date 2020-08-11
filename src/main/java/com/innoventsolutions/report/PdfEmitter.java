@@ -1,7 +1,9 @@
 package com.innoventsolutions.report;
 
 import java.io.OutputStream;
-import java.text.Format;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -160,25 +162,44 @@ public class PdfEmitter implements Emitter {
 								else if (component instanceof IntegerData) {
 									final IntegerData data = (IntegerData) component;
 									final long value = data.getValue(dataRowBinding.getDataRow());
-									final Format format = data.getFormat();
-									final String text = format != null ? format.format(value)
-										: String.valueOf(value);
+									final String format = data.getFormat();
+									final String text;
+									if (format != null) {
+										final DecimalFormat df = new DecimalFormat(format);
+										text = df.format(value);
+									}
+									else {
+										text = String.valueOf(value);
+									}
 									paragraph = new Paragraph(text);
 								}
 								else if (component instanceof FloatData) {
 									final FloatData data = (FloatData) component;
 									final double value = data.getValue(dataRowBinding.getDataRow());
-									final Format format = data.getFormat();
-									final String text = format != null ? format.format(value)
-										: String.valueOf(value);
+									final String format = data.getFormat();
+									final String text;
+									if (format != null) {
+										final DecimalFormat df = new DecimalFormat(format);
+										text = df.format(value);
+									}
+									else {
+										text = String.valueOf(value);
+									}
 									paragraph = new Paragraph(text);
 								}
 								else if (component instanceof DateData) {
 									final DateData data = (DateData) component;
 									final Date value = data.getValue(dataRowBinding.getDataRow());
-									final Format format = data.getFormat();
-									final String text = format != null ? format.format(value)
-										: String.valueOf(value);
+									final String format = data.getFormat();
+									final String text;
+									if (format != null) {
+										final DateFormat df = new SimpleDateFormat(format);
+										text = df.format(value);
+									}
+									else {
+										text = String.valueOf(value);
+									}
+									;
 									paragraph = new Paragraph(text);
 								}
 								if (paragraph != null) {
