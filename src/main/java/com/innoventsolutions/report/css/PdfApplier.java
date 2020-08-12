@@ -1,8 +1,6 @@
 package com.innoventsolutions.report.css;
 
-import org.w3c.dom.DOMException;
-import org.w3c.dom.css.CSSPrimitiveValue;
-import org.w3c.dom.css.RGBColor;
+import java.util.List;
 
 import com.innoventsolutions.report.css.CSS.Side;
 import com.itextpdf.text.BaseColor;
@@ -14,7 +12,12 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfDiv;
 import com.itextpdf.text.pdf.PdfPCell;
-import com.steadystate.css.dom.CSSValueImpl;
+
+import cz.vutbr.web.css.Term;
+import cz.vutbr.web.css.TermColor;
+import cz.vutbr.web.css.TermIdent;
+import cz.vutbr.web.css.TermLength;
+import cz.vutbr.web.csskit.Color;
 
 /**
  * Apply CSS styles to an iText PDF element.
@@ -29,8 +32,8 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	@Override
-	public void applyTextAlign(final CSSValueImpl cssValueImpl) {
-		final String styleString = cssValueImpl == null ? "left" : cssValueImpl.getStringValue(); // TODO left if ltr, right if rtl
+	public void applyTextAlign(final TermIdent termIdent) {
+		final String styleString = termIdent.getValue();
 		int alignment;
 		if ("left".equalsIgnoreCase(styleString)) {
 			alignment = Element.ALIGN_LEFT;
@@ -50,79 +53,74 @@ public class PdfApplier implements CSS.Applier {
 			alignment = PdfPCell.ALIGN_LEFT;
 		}
 		if (element instanceof PdfPCell) {
-			System.out.println("Applying text-align: " + cssValueImpl + " to cell " + element);
+			System.out.println("Applying text-align: " + styleString + " to cell " + element);
 			final PdfPCell pdfCell = (PdfPCell) element;
 			pdfCell.setHorizontalAlignment(alignment);
 		}
 		else if (element instanceof Paragraph) {
-			System.out.println("Applying text-align: " + cssValueImpl + " to paragraph " + element);
+			System.out.println("Applying text-align: " + styleString + " to paragraph " + element);
 			final Paragraph paragraph = (Paragraph) element;
 			paragraph.setAlignment(alignment);
 		}
 	}
 
-	protected static BaseColor getColor(final CSSValueImpl cssValue) {
-		RGBColor rgbColor;
-		try {
-			rgbColor = cssValue.getRGBColorValue();
-		}
-		catch (final DOMException e) {
-			System.out.println("DOM Exception");
-			System.err.println("DOM Exception " + e + " on " + cssValue);
-			Thread.dumpStack();
+	protected static BaseColor getColor(final TermColor termColor) {
+		if (termColor == null) {
 			return BaseColor.BLACK;
 		}
-		final int red = (int) CSS.getColor(rgbColor.getRed());
-		final int green = (int) CSS.getColor(rgbColor.getGreen());
-		final int blue = (int) CSS.getColor(rgbColor.getBlue());
+		final Color color = termColor.getValue();
+		final int red = color.getRed();
+		final int green = color.getGreen();
+		final int blue = color.getBlue();
+		final int alpha = color.getAlpha();
 		try {
-			return new BaseColor(red, green, blue);
+			return new BaseColor(red, green, blue, alpha);
 		}
 		catch (final Exception e) {
 			System.out.println("Invalid color");
-			System.err.println("Invalid color: " + cssValue);
+			System.err.println("Invalid color: " + termColor);
 			Thread.dumpStack();
 			return BaseColor.BLACK;
 		}
 	}
 
 	@Override
-	public void applyPadding(final CSS.Side side, final CSSValueImpl cssValueImpl) {
+	public void applyPadding(final CSS.Side side, final TermLength termLength) {
+		final float length = CSS.convertLength(termLength);
 		if (element instanceof PdfPCell) {
-			System.out.println(
-				"Applying " + side + " padding: " + cssValueImpl + " to cell " + element);
+			System.out.println("Applying " + side + " padding: " + length + " to cell " + element);
 			final PdfPCell cell = (PdfPCell) element;
 			switch (side) {
 			case TOP:
-				cell.setPaddingTop(CSS.convertLength(cssValueImpl, 0F));
+				cell.setPaddingTop(length);
 				break;
 			case RIGHT:
-				cell.setPaddingRight(CSS.convertLength(cssValueImpl, 0F));
+				cell.setPaddingRight(length);
 				break;
 			case BOTTOM:
-				cell.setPaddingBottom(CSS.convertLength(cssValueImpl, 0F));
+				cell.setPaddingBottom(length);
 				break;
 			case LEFT:
-				cell.setPaddingLeft(CSS.convertLength(cssValueImpl, 0F));
+				cell.setPaddingLeft(length);
 				break;
 			}
 		}
 	}
 
 	@Override
-	public void applyBorder(final Side side, final CSSValueImpl cssValueImpl) {
-		final CSS.BorderInfo borderInfo = new CSS.BorderInfo(cssValueImpl);
+	public void applyBorder(final Side side, final List<Term<?>> list) {
+		final CSS.BorderInfo borderInfo = new CSS.BorderInfo(list);
 		applyBorderWidth(side, borderInfo.width);
 		applyBorderStyle(side, borderInfo.style);
 		applyBorderColor(side, borderInfo.color);
 	}
 
 	@Override
-	public void applyBorderWidth(final Side side, final CSSValueImpl cssValueImpl) {
-		final float specifiedValue = cssValueImpl == null ? 2 : CSS.convertLength(cssValueImpl, 0F); // TODO
+	public void applyBorderWidth(final Side side, final TermLength termLength) {
+		final float specifiedValue = CSS.convertLength(termLength);
 		if (element instanceof Rectangle) {
 			System.out.println(
-				"Applying " + side + " border-width: " + cssValueImpl + " to " + element);
+				"Applying " + side + " border-width: " + specifiedValue + " to " + element);
 			final Rectangle rectangle = (Rectangle) element;
 			switch (side) {
 			case TOP:
@@ -142,20 +140,19 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	@Override
-	public void applyBorderStyle(final Side side, final CSSValueImpl cssValueImpl) {
-		final String style = cssValueImpl == null ? "none" : cssValueImpl.getStringValue();
+	public void applyBorderStyle(final Side side, final TermIdent termIdent) {
+		final String style = termIdent.getValue();
 		if (!"none".equalsIgnoreCase(style)) {
 			System.out.println("ignoring border style " + style);
 		}
 	}
 
 	@Override
-	public void applyBorderColor(final Side side, final CSSValueImpl cssValueImpl) {
-		final BaseColor specifiedValue = cssValueImpl == null ? BaseColor.BLACK
-			: getColor(cssValueImpl);
+	public void applyBorderColor(final Side side, final TermColor termColor) {
+		final BaseColor specifiedValue = getColor(termColor);
 		if (element instanceof Rectangle) {
 			System.out.println(
-				"Applying " + side + " border-color: " + cssValueImpl + " to " + element);
+				"Applying " + side + " border-color: " + termColor + " to " + element);
 			final Rectangle rectangle = (Rectangle) element;
 			switch (side) {
 			case TOP:
@@ -175,16 +172,16 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	@Override
-	public void applyColor(final CSSValueImpl cssValueImpl) {
+	public void applyColor(final TermColor termColor) {
 		if (element instanceof Phrase) {
-			System.out.println("Applying color: " + cssValueImpl + " to phrase " + element);
+			System.out.println("Applying color: " + termColor + " to phrase " + element);
 			final Phrase phrase = (Phrase) element;
-			phrase.getFont().setColor(getColor(cssValueImpl));
+			phrase.getFont().setColor(getColor(termColor));
 		}
 		else if (element instanceof Chunk) {
-			System.out.println("Applying color: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying color: " + termColor + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
-			chunk.getFont().setColor(getColor(cssValueImpl));
+			chunk.getFont().setColor(getColor(termColor));
 		}
 	}
 
@@ -206,15 +203,15 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	@Override
-	public void applyFontStyle(final CSSValueImpl cssValueImpl) {
-		final String styleString = cssValueImpl == null ? "normal" : cssValueImpl.getStringValue();
+	public void applyFontStyle(final TermIdent termIdent) {
+		final String styleString = termIdent.getValue();
 		if (element instanceof Phrase) {
-			System.out.println("Applying font-style: " + cssValueImpl + " to phrase " + element);
+			System.out.println("Applying font-style: " + styleString + " to phrase " + element);
 			final Phrase phrase = (Phrase) element;
 			applyFontStyle(phrase.getFont(), styleString);
 		}
 		else if (element instanceof Chunk) {
-			System.out.println("Applying font-style: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-style: " + styleString + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
 			applyFontStyle(chunk.getFont(), styleString);
 		}
@@ -238,25 +235,26 @@ public class PdfApplier implements CSS.Applier {
 	}
 
 	@Override
-	public void applyFontWeight(final CSSValueImpl cssValueImpl) {
-		final String weightString = cssValueImpl == null ? "normal" : cssValueImpl.getStringValue();
+	public void applyFontWeight(final TermIdent termIdent) {
+		final String weightString = termIdent.getValue();
 		if (element instanceof Phrase) {
-			System.out.println("Applying font-weight: " + cssValueImpl + " to phrase " + element);
+			System.out.println("Applying font-weight: " + weightString + " to phrase " + element);
 			final Phrase phrase = (Phrase) element;
 			applyFontWeight(phrase.getFont(), weightString);
 		}
 		else if (element instanceof Chunk) {
-			System.out.println("Applying font-weight: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-weight: " + weightString + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
 			applyFontWeight(chunk.getFont(), weightString);
 		}
 	}
 
 	@Override
-	public void applyFontSize(final CSSValueImpl cssValueImpl) {
+	public void applyFontSize(final Term<?> term) {
 		final float size;
-		if (cssValueImpl.getPrimitiveType() == CSSPrimitiveValue.CSS_IDENT) {
-			final String sizeString = cssValueImpl.getStringValue();
+		if (term instanceof TermIdent) {
+			final TermIdent termIdent = (TermIdent) term;
+			final String sizeString = termIdent.getValue();
 			if ("xx-small".equalsIgnoreCase(sizeString)) {
 				size = 6;
 			}
@@ -285,58 +283,62 @@ public class PdfApplier implements CSS.Applier {
 				size = 14;
 			}
 			else {
-				System.out.println("Unrecognize font size name: " + sizeString);
+				System.err.println("Unrecognized font size name: " + sizeString);
+				System.out.println("Unrecognized font size name");
 				size = 10;
 			}
 		}
+		else if (term instanceof TermLength) {
+			final TermLength termLength = (TermLength) term;
+			size = CSS.convertLength(termLength);
+		}
 		else {
-			size = CSS.convertLength(cssValueImpl, 0F); // TODO
+			throw new IllegalArgumentException("Expecting TermIdent or TermLength for font-size");
 		}
 		if (element instanceof Phrase) {
-			System.out.println("Applying font-size: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-size: " + size + " to chunk " + element);
 			final Phrase phrase = (Phrase) element;
 			phrase.getFont().setSize(size);
 		}
 		else if (element instanceof Chunk) {
-			System.out.println("Applying font-size: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-size: " + size + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
 			chunk.getFont().setSize(size);
 		}
 	}
 
 	@Override
-	public void applyFontFamily(final CSSValueImpl cssValueImpl) {
-		final String family = cssValueImpl == null ? "helvetica" : cssValueImpl.getStringValue();
+	public void applyFontFamily(final TermIdent termIdent) {
+		final String family = termIdent.getValue();
 		if (element instanceof Phrase) {
-			System.out.println("Applying font-family: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-family: " + termIdent + " to chunk " + element);
 			final Phrase phrase = (Phrase) element;
 			phrase.getFont().setFamily(family);
 		}
 		else if (element instanceof Chunk) {
-			System.out.println("Applying font-family: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying font-family: " + termIdent + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
 			chunk.getFont().setFamily(family);
 		}
 	}
 
 	@Override
-	public void applyBackgroundColor(final CSSValueImpl cssValueImpl) {
+	public void applyBackgroundColor(final TermColor termColor) {
 		if (element instanceof Chunk) {
-			System.out.println(
-				"Applying background-color: " + cssValueImpl + " to chunk " + element);
+			System.out.println("Applying background-color: " + termColor + " to chunk " + element);
 			final Chunk chunk = (Chunk) element;
-			chunk.setBackground(getColor(cssValueImpl));
+			chunk.setBackground(getColor(termColor));
 		}
 		else if (element instanceof Rectangle) {
 			System.out.println(
-				"Applying background-color: " + cssValueImpl + " to rectangle " + element);
+				"Applying background-color: " + termColor + " to rectangle " + element);
 			final Rectangle rectangle = (Rectangle) element;
-			rectangle.setBackgroundColor(getColor(cssValueImpl));
+			rectangle.setBackgroundColor(getColor(termColor));
 		}
 		else if (element instanceof PdfDiv) {
-			System.out.println("Applying background-color: " + cssValueImpl + " to div " + element);
+			System.out.println("Applying background-color: " + termColor + " to div " + element);
 			final PdfDiv div = (PdfDiv) element;
-			div.setBackgroundColor(getColor(cssValueImpl));
+			div.setBackgroundColor(getColor(termColor));
 		}
 	}
 }

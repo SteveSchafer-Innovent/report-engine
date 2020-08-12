@@ -1,7 +1,6 @@
 package com.innoventsolutions.report.css;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,27 +9,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.w3c.css.sac.CSSException;
-import org.w3c.css.sac.DocumentHandler;
-import org.w3c.css.sac.InputSource;
-import org.w3c.css.sac.LexicalUnit;
-import org.w3c.css.sac.Parser;
-import org.w3c.css.sac.SACMediaList;
-import org.w3c.css.sac.SelectorList;
-import org.w3c.css.sac.helpers.ParserFactory;
-import org.w3c.dom.css.CSSPrimitiveValue;
-import org.w3c.dom.css.CSSStyleDeclaration;
-import org.w3c.dom.css.CSSValue;
-
-import com.steadystate.css.dom.CSSValueImpl;
-import com.steadystate.css.parser.CSSOMParser;
-import com.steadystate.css.parser.SACParserCSS3;
-
 import cz.vutbr.web.css.CSSFactory;
 import cz.vutbr.web.css.CombinedSelector;
+import cz.vutbr.web.css.MediaSpec;
 import cz.vutbr.web.css.RuleSet;
 import cz.vutbr.web.css.StyleSheet;
+import cz.vutbr.web.css.Term;
+import cz.vutbr.web.css.TermColor;
+import cz.vutbr.web.css.TermFactory;
+import cz.vutbr.web.css.TermIdent;
+import cz.vutbr.web.css.TermLength;
+import cz.vutbr.web.css.TermNumeric.Unit;
 import cz.vutbr.web.csskit.Color;
+import cz.vutbr.web.csskit.TermFactoryImpl;
 
 /**
  * Static CSS parsing methods and objects. This is independent of any kind of
@@ -40,6 +31,35 @@ import cz.vutbr.web.csskit.Color;
  */
 public class CSS {
 	private CSS() {
+	}
+
+	public static final float dpi = 72.0F;
+
+	public static float convertLength(final TermLength termLength) {
+		final float value = termLength.getValue().floatValue();
+		final TermLength.Unit unit = termLength.getUnit();
+		switch (unit) {
+		case pt:
+			return value;
+		case in:
+			return value * dpi;
+		case cm:
+			return (value * dpi) / 2.54f;
+		case mm:
+			return (value * dpi) / 25.4f;
+		case q:
+			return (value * dpi) / (2.54f * 40f);
+		case pc:
+			return (value * 12 * dpi) / 72.0f;
+		case px:
+			return value;
+		case em:
+			return MediaSpec.em * value;
+		case ex:
+			return MediaSpec.ex * value;
+		default:
+			return 0.0F;
+		}
 	}
 
 	/**
@@ -77,118 +97,74 @@ public class CSS {
 	/**
 	 * Supplies default values for styles.
 	 */
-	static Map<String, Supplier<CSSValueImpl>> DEFAULT_STYLE_SUPPLIERS;
+	static Map<String, Supplier<Term<?>>> DEFAULT_STYLE_SUPPLIERS;
 	static {
-		final Map<String, Supplier<CSSValueImpl>> map = new HashMap<>();
+		final Map<String, Supplier<Term<?>>> map = new HashMap<>();
 		map.put("padding-top", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("0");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(0.0F, Unit.pt);
 		});
 		map.put("padding-right", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("0");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(0.0F, Unit.pt);
 		});
 		map.put("padding-bottom", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("0");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(0.0F, Unit.pt);
 		});
 		map.put("padding-left", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("0");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(0.0F, Unit.pt);
 		});
 		map.put("border-top-width", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setFloatValue(CSSPrimitiveValue.CSS_PT, 2);
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(2.0F, Unit.pt);
 		});
 		map.put("border-right-width", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setFloatValue(CSSPrimitiveValue.CSS_PT, 2);
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(2.0F, Unit.pt);
 		});
 		map.put("border-bottom-width", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setFloatValue(CSSPrimitiveValue.CSS_PT, 2);
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(2.0F, Unit.pt);
 		});
 		map.put("border-left-width", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setFloatValue(CSSPrimitiveValue.CSS_PT, 2);
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createLength(2.0F, Unit.pt);
 		});
 		map.put("border-top-style", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("none");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("none");
 		});
 		map.put("border-right-style", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("none");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("none");
 		});
 		map.put("border-bottom-style", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("none");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("none");
 		});
 		map.put("border-left-style", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("none");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("none");
 		});
 		map.put("border-top-color", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("#000000");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createColor(0, 0, 0);
 		});
 		map.put("border-right-color", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("#000000");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createColor(0, 0, 0);
 		});
 		map.put("border-bottom-color", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("#000000");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createColor(0, 0, 0);
 		});
 		map.put("border-left-color", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("#000000");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createColor(0, 0, 0);
 		});
 		map.put("font-family", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("helvetica");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("helvetica");
 		});
 		map.put("font-size", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("medium");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("medium");
 		});
 		map.put("font-weight", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("normal");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("normal");
 		});
 		map.put("font-style", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("normal");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("normal");
 		});
 		map.put("color", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("#000000");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createColor(0, 0, 0);
 		});
 		map.put("text-align", () -> {
-			final CSSValueImpl cssValueImpl = new CSSValueImpl();
-			cssValueImpl.setCssText("left");
-			return cssValueImpl;
+			return TermFactoryImpl.getInstance().createIdent("left");
 		});
 		DEFAULT_STYLE_SUPPLIERS = map;
 	}
@@ -200,7 +176,7 @@ public class CSS {
 	interface StyleFactory {
 		String getName();
 
-		Style parse(CSSValueImpl cssValueImpl);
+		Style parse(List<Term<?>> object);
 	}
 
 	private static Map<String, StyleFactory> STYLE_APPLIER_FACTORIES;
@@ -213,40 +189,37 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						if (cssValueImpl != null) {
-							final CSSValueImpl[] specifiedValues = getValues(cssValueImpl);
-							switch (specifiedValues.length) {
-							case 4:
-								applier.applyPadding(Side.TOP, specifiedValues[0]);
-								applier.applyPadding(Side.RIGHT, specifiedValues[1]);
-								applier.applyPadding(Side.BOTTOM, specifiedValues[2]);
-								applier.applyPadding(Side.LEFT, specifiedValues[3]);
-								break;
-							case 3:
-								applier.applyPadding(Side.TOP, specifiedValues[0]);
-								applier.applyPadding(Side.RIGHT, specifiedValues[1]);
-								applier.applyPadding(Side.BOTTOM, specifiedValues[2]);
-								applier.applyPadding(Side.LEFT, specifiedValues[1]);
-								break;
-							case 2:
-								applier.applyPadding(Side.TOP, specifiedValues[0]);
-								applier.applyPadding(Side.RIGHT, specifiedValues[1]);
-								applier.applyPadding(Side.BOTTOM, specifiedValues[0]);
-								applier.applyPadding(Side.LEFT, specifiedValues[1]);
-								break;
-							case 1:
-								applier.applyPadding(Side.TOP, specifiedValues[0]);
-								applier.applyPadding(Side.RIGHT, specifiedValues[0]);
-								applier.applyPadding(Side.BOTTOM, specifiedValues[0]);
-								applier.applyPadding(Side.LEFT, specifiedValues[0]);
-								break;
-							default:
-								System.out.println("Too many values for padding");
-							}
+						switch (list.size()) {
+						case 4:
+							applier.applyPadding(Side.TOP, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.RIGHT, getTermLength(list, 1, 0F, Unit.pt));
+							applier.applyPadding(Side.BOTTOM, getTermLength(list, 2, 0F, Unit.pt));
+							applier.applyPadding(Side.LEFT, getTermLength(list, 3, 0F, Unit.pt));
+							break;
+						case 3:
+							applier.applyPadding(Side.TOP, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.RIGHT, getTermLength(list, 1, 0F, Unit.pt));
+							applier.applyPadding(Side.BOTTOM, getTermLength(list, 2, 0F, Unit.pt));
+							applier.applyPadding(Side.LEFT, getTermLength(list, 1, 0F, Unit.pt));
+							break;
+						case 2:
+							applier.applyPadding(Side.TOP, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.RIGHT, getTermLength(list, 1, 0F, Unit.pt));
+							applier.applyPadding(Side.BOTTOM, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.LEFT, getTermLength(list, 1, 0F, Unit.pt));
+							break;
+						case 1:
+							applier.applyPadding(Side.TOP, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.RIGHT, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.BOTTOM, getTermLength(list, 0, 0F, Unit.pt));
+							applier.applyPadding(Side.LEFT, getTermLength(list, 0, 0F, Unit.pt));
+							break;
+						default:
+							System.out.println("Too many values for padding");
 						}
 					}
 				};
@@ -259,11 +232,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyPadding(Side.TOP, cssValueImpl);
+						applier.applyPadding(Side.TOP, termLength);
 					}
 				};
 			}
@@ -275,11 +249,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyPadding(Side.RIGHT, cssValueImpl);
+						applier.applyPadding(Side.RIGHT, termLength);
 					}
 				};
 			}
@@ -291,11 +266,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyPadding(Side.BOTTOM, cssValueImpl);
+						applier.applyPadding(Side.BOTTOM, termLength);
 					}
 				};
 			}
@@ -307,11 +283,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyPadding(Side.LEFT, cssValueImpl);
+						applier.applyPadding(Side.LEFT, termLength);
 					}
 				};
 			}
@@ -323,11 +300,11 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> object) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorder(Side.TOP, cssValueImpl);
+						applier.applyBorder(Side.TOP, object);
 					}
 				};
 			}
@@ -339,11 +316,11 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> object) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorder(Side.RIGHT, cssValueImpl);
+						applier.applyBorder(Side.RIGHT, object);
 					}
 				};
 			}
@@ -355,11 +332,11 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> object) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorder(Side.BOTTOM, cssValueImpl);
+						applier.applyBorder(Side.BOTTOM, object);
 					}
 				};
 			}
@@ -371,11 +348,11 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> object) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorder(Side.LEFT, cssValueImpl);
+						applier.applyBorder(Side.LEFT, object);
 					}
 				};
 			}
@@ -387,14 +364,14 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> object) {
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorder(Side.TOP, cssValueImpl);
-						applier.applyBorder(Side.RIGHT, cssValueImpl);
-						applier.applyBorder(Side.BOTTOM, cssValueImpl);
-						applier.applyBorder(Side.LEFT, cssValueImpl);
+						applier.applyBorder(Side.TOP, object);
+						applier.applyBorder(Side.RIGHT, object);
+						applier.applyBorder(Side.BOTTOM, object);
+						applier.applyBorder(Side.LEFT, object);
 					}
 				};
 			}
@@ -406,14 +383,15 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderWidth(Side.TOP, cssValueImpl);
-						applier.applyBorderWidth(Side.RIGHT, cssValueImpl);
-						applier.applyBorderWidth(Side.BOTTOM, cssValueImpl);
-						applier.applyBorderWidth(Side.LEFT, cssValueImpl);
+						applier.applyBorderWidth(Side.TOP, termLength);
+						applier.applyBorderWidth(Side.RIGHT, termLength);
+						applier.applyBorderWidth(Side.BOTTOM, termLength);
+						applier.applyBorderWidth(Side.LEFT, termLength);
 					}
 				};
 			}
@@ -425,14 +403,15 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "none");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderStyle(Side.TOP, cssValueImpl);
-						applier.applyBorderStyle(Side.RIGHT, cssValueImpl);
-						applier.applyBorderStyle(Side.BOTTOM, cssValueImpl);
-						applier.applyBorderStyle(Side.LEFT, cssValueImpl);
+						applier.applyBorderStyle(Side.TOP, termIdent);
+						applier.applyBorderStyle(Side.RIGHT, termIdent);
+						applier.applyBorderStyle(Side.BOTTOM, termIdent);
+						applier.applyBorderStyle(Side.LEFT, termIdent);
 					}
 				};
 			}
@@ -444,14 +423,15 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderColor(Side.TOP, cssValueImpl);
-						applier.applyBorderColor(Side.RIGHT, cssValueImpl);
-						applier.applyBorderColor(Side.BOTTOM, cssValueImpl);
-						applier.applyBorderColor(Side.LEFT, cssValueImpl);
+						applier.applyBorderColor(Side.TOP, termColor);
+						applier.applyBorderColor(Side.RIGHT, termColor);
+						applier.applyBorderColor(Side.BOTTOM, termColor);
+						applier.applyBorderColor(Side.LEFT, termColor);
 					}
 				};
 			}
@@ -463,11 +443,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderWidth(Side.TOP, cssValueImpl);
+						applier.applyBorderWidth(Side.TOP, termLength);
 					}
 				};
 			}
@@ -479,11 +460,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderWidth(Side.RIGHT, cssValueImpl);
+						applier.applyBorderWidth(Side.RIGHT, termLength);
 					}
 				};
 			}
@@ -495,11 +477,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderWidth(Side.BOTTOM, cssValueImpl);
+						applier.applyBorderWidth(Side.BOTTOM, termLength);
 					}
 				};
 			}
@@ -511,11 +494,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermLength termLength = getTermLength(list, 0F, Unit.pt);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderWidth(Side.LEFT, cssValueImpl);
+						applier.applyBorderWidth(Side.LEFT, termLength);
 					}
 				};
 			}
@@ -527,11 +511,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "none");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderStyle(Side.TOP, cssValueImpl);
+						applier.applyBorderStyle(Side.TOP, termIdent);
 					}
 				};
 			}
@@ -543,11 +528,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "none");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderStyle(Side.RIGHT, cssValueImpl);
+						applier.applyBorderStyle(Side.RIGHT, termIdent);
 					}
 				};
 			}
@@ -559,11 +545,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "none");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderStyle(Side.BOTTOM, cssValueImpl);
+						applier.applyBorderStyle(Side.BOTTOM, termIdent);
 					}
 				};
 			}
@@ -575,11 +562,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "none");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderStyle(Side.LEFT, cssValueImpl);
+						applier.applyBorderStyle(Side.LEFT, termIdent);
 					}
 				};
 			}
@@ -591,11 +579,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderColor(Side.TOP, cssValueImpl);
+						applier.applyBorderColor(Side.TOP, termColor);
 					}
 				};
 			}
@@ -607,11 +596,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderColor(Side.RIGHT, cssValueImpl);
+						applier.applyBorderColor(Side.RIGHT, termColor);
 					}
 				};
 			}
@@ -623,11 +613,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderColor(Side.BOTTOM, cssValueImpl);
+						applier.applyBorderColor(Side.BOTTOM, termColor);
 					}
 				};
 			}
@@ -639,11 +630,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBorderColor(Side.LEFT, cssValueImpl);
+						applier.applyBorderColor(Side.LEFT, termColor);
 					}
 				};
 			}
@@ -655,11 +647,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "helvetica");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyFontFamily(cssValueImpl);
+						applier.applyFontFamily(termIdent);
 					}
 				};
 			}
@@ -671,11 +664,13 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final Term<?> term = getTerm(list,
+					TermFactoryImpl.getInstance().createIdent("medium"));
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyFontSize(cssValueImpl);
+						applier.applyFontSize(term);
 					}
 				};
 			}
@@ -687,11 +682,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "normal");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyFontWeight(cssValueImpl);
+						applier.applyFontWeight(termIdent);
 					}
 				};
 			}
@@ -703,11 +699,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "normal");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyFontStyle(cssValueImpl);
+						applier.applyFontStyle(termIdent);
 					}
 				};
 			}
@@ -719,11 +716,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyColor(cssValueImpl);
+						applier.applyColor(termColor);
 					}
 				};
 			}
@@ -735,11 +733,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermIdent termIdent = getTermIdent(list, "left");
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyTextAlign(cssValueImpl);
+						applier.applyTextAlign(termIdent);
 					}
 				};
 			}
@@ -751,11 +750,12 @@ public class CSS {
 			}
 
 			@Override
-			public Style parse(final CSSValueImpl cssValueImpl) {
+			public Style parse(final List<Term<?>> list) {
+				final TermColor termColor = getTermColor(list, 0, 0, 0, 255);
 				return new Style() {
 					@Override
 					public void apply(final Applier applier) {
-						applier.applyBackgroundColor(cssValueImpl);
+						applier.applyBackgroundColor(termColor);
 					}
 				};
 			}
@@ -788,13 +788,13 @@ public class CSS {
 		 *
 		 * @return
 		 */
-		public Map<String, CSSValueImpl> getCSSValues() {
-			final Map<String, CSSValueImpl> cssValues = new HashMap<>();
+		public Map<String, List<Term<?>>> getCSSValues() {
+			final Map<String, List<Term<?>>> cssValues = new HashMap<>();
 			populateCssValuesMap(cssValues);
 			return cssValues;
 		}
 
-		private void populateCssValuesMap(final Map<String, CSSValueImpl> cssValues) {
+		private void populateCssValuesMap(final Map<String, List<Term<?>>> cssValues) {
 			if (container != null) {
 				// add parents before children
 				container.populateCssValuesMap(cssValues);
@@ -812,8 +812,10 @@ public class CSS {
 					System.out.println("combinedSelectors = " + (combinedSelectors == null ? "null"
 						: String.valueOf(combinedSelectors.length)));
 					ruleSet.forEach(declaration -> {
-						final String property = declaration.getProperty();
-						System.out.println("property = " + property);
+						final String propName = declaration.getProperty();
+						removeShortcutTargets(propName, cssValues);
+						System.out.println("property = " + propName);
+						cssValues.put(propName, declaration.asList());
 						declaration.forEach(term -> {
 							final Object value = term.getValue();
 							System.out.println("value = " + value);
@@ -831,50 +833,30 @@ public class CSS {
 				});
 			}
 			catch (final IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			catch (final cz.vutbr.web.css.CSSException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			final InputSource source = new InputSource(new StringReader(styleString));
-			final CSSOMParser parser = new CSSOMParser(new SACParserCSS3());
-			try {
-				final CSSStyleDeclaration declaration = parser.parseStyleDeclaration(source);
-				final int length = declaration.getLength();
-				for (int i = 0; i < length; i++) {
-					final String propName = declaration.item(i).toLowerCase();
-					final CSSValueImpl cssValueImpl = (CSSValueImpl) declaration.getPropertyCSSValue(
-						propName);
-					removeShortcutTargets(propName, cssValues);
-					if (cssValueImpl.getCssValueType() != CSSValue.CSS_INHERIT) {
-						cssValues.put(propName, cssValueImpl);
+			final Set<String> effectiveProps = new HashSet<>();
+			for (final String declaredProp : cssValues.keySet()) {
+				effectiveProps.add(declaredProp);
+				addEffectiveProps(declaredProp, effectiveProps);
+			}
+			System.out.println("  effective props = " + effectiveProps);
+			// add defaults
+			for (final String propName : CSS.DEFAULT_STYLE_SUPPLIERS.keySet()) {
+				if (!effectiveProps.contains(propName)) {
+					final Supplier<Term<?>> supplier = CSS.DEFAULT_STYLE_SUPPLIERS.get(propName);
+					if (supplier != null) {
+						final Term<?> defaultValue = supplier.get();
+						final List<Term<?>> list = new ArrayList<>();
+						list.add(defaultValue);
+						cssValues.put(propName, list);
 					}
 				}
-				System.out.println("  declared = " + cssValues);
-				final Set<String> effectiveProps = new HashSet<>();
-				for (final String declaredProp : cssValues.keySet()) {
-					effectiveProps.add(declaredProp);
-					addEffectiveProps(declaredProp, effectiveProps);
-				}
-				System.out.println("  effective props = " + effectiveProps);
-				// add defaults
-				for (final String propName : CSS.DEFAULT_STYLE_SUPPLIERS.keySet()) {
-					if (!effectiveProps.contains(propName)) {
-						final Supplier<CSSValueImpl> supplier = CSS.DEFAULT_STYLE_SUPPLIERS.get(
-							propName);
-						if (supplier != null) {
-							final CSSValueImpl defaultValue = supplier.get();
-							cssValues.put(propName, defaultValue);
-						}
-					}
-				}
-				System.out.println("  with defaults = " + cssValues);
 			}
-			catch (final IOException e) {
-				e.printStackTrace();
-			}
+			System.out.println("  with defaults = " + cssValues);
 		}
 
 		private void addEffectiveProps(final String declaredProp,
@@ -889,8 +871,7 @@ public class CSS {
 			}
 		}
 
-		private void removeShortcutTargets(final String propName,
-				final Map<String, CSSValueImpl> cssValues) {
+		private void removeShortcutTargets(final String propName, final Map<String, ?> cssValues) {
 			final List<String> shortcutTargets = CSS.SHORTCUT_TARGETS.get(propName);
 			if (shortcutTargets != null) {
 				for (final String shortcutTarget : shortcutTargets) {
@@ -932,140 +913,20 @@ public class CSS {
 	 * @return a list of styles
 	 */
 	public static List<Style> parseCss(final StyleMapHolder styleMapHolder) {
-		final Map<String, CSSValueImpl> cssValues = styleMapHolder.getCSSValues();
+		final Map<String, List<Term<?>>> cssValues = styleMapHolder.getCSSValues();
 		final List<Style> styleAppliers = new ArrayList<>();
 		for (final String propName : cssValues.keySet()) {
-			final CSSValueImpl cssValueImpl = cssValues.get(propName);
-			System.out.println("    " + propName + ": " + cssValueImpl);
+			final List<Term<?>> list = cssValues.get(propName);
+			System.out.println("    " + propName + ": " + list);
 			final StyleFactory factory = STYLE_APPLIER_FACTORIES.get(propName);
 			if (factory != null) {
-				styleAppliers.add(factory.parse(cssValueImpl));
+				styleAppliers.add(factory.parse(list));
 			}
 			else {
-				System.out.println("Cannot handle " + propName + " = " + cssValueImpl);
+				System.out.println("Cannot handle " + propName + " = " + list);
 			}
 		}
 		return styleAppliers;
-	}
-
-	static CSSValueImpl[] getValues(final CSSValueImpl cssValueImpl) {
-		if (cssValueImpl.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-			final CSSValueImpl[] values = new CSSValueImpl[1];
-			values[0] = cssValueImpl;
-			return values;
-		}
-		final int length = cssValueImpl.getLength();
-		final CSSValueImpl[] values = new CSSValueImpl[length];
-		for (int i = 0; i < length; i++) {
-			final CSSValueImpl itemValueImpl = (CSSValueImpl) cssValueImpl.item(i);
-			if (itemValueImpl.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-				values[i] = itemValueImpl;
-			}
-			else {
-				System.out.println("Expecting primitive value in sub-value " + (i + 1));
-				values[i] = null;
-			}
-		}
-		return values;
-	}
-
-	@SuppressWarnings("unused")
-	private static void parseCssSac(final String stylesString) {
-		try {
-			System.setProperty("org.w3c.css.sac.parser", "org.w3c.flute.parser.Parser");
-			final ParserFactory parserFactory = new ParserFactory();
-			final Parser parser = parserFactory.makeParser();
-			final InputSource inputSource = new InputSource();
-			inputSource.setCharacterStream(new StringReader(stylesString));
-			final DocumentHandler documentHandler = new DocumentHandler() {
-				@Override
-				public void comment(final String arg0) throws CSSException {
-				}
-
-				@Override
-				public void endDocument(final InputSource arg0) throws CSSException {
-				}
-
-				@Override
-				public void endFontFace() throws CSSException {
-					System.out.println("endFontFace");
-				}
-
-				@Override
-				public void endMedia(final SACMediaList arg0) throws CSSException {
-				}
-
-				@Override
-				public void endPage(final String arg0, final String arg1) throws CSSException {
-				}
-
-				@Override
-				public void endSelector(final SelectorList arg0) throws CSSException {
-				}
-
-				@Override
-				public void ignorableAtRule(final String arg0) throws CSSException {
-					System.out.println("ignorableAtRule = " + arg0);
-				}
-
-				@Override
-				public void importStyle(final String arg0, final SACMediaList arg1,
-						final String arg2) throws CSSException {
-				}
-
-				@Override
-				public void namespaceDeclaration(final String arg0, final String arg1)
-						throws CSSException {
-				}
-
-				@Override
-				public void property(final String name, final LexicalUnit lu,
-						final boolean important) throws CSSException {
-					System.out.println(name);
-					try {
-						System.out.println("  dimensionalUnitText = " + lu.getDimensionUnitText());
-					}
-					catch (final Exception e) {
-						System.out.println("  failed to get dimensionalUnitText: " + e);
-					}
-					System.out.println("  floatValue = " + lu.getFloatValue());
-					System.out.println("  functionName = " + lu.getFunctionName());
-					System.out.println("  integerValue = " + lu.getIntegerValue());
-					System.out.println("  lexicalUnitType = " + lu.getLexicalUnitType());
-					System.out.println("  stringValue = " + lu.getStringValue());
-					System.out.println("  parameters = " + lu.getParameters());
-					System.out.println("  subValues = " + lu.getSubValues());
-					System.out.println("  important = " + important);
-				}
-
-				@Override
-				public void startDocument(final InputSource arg0) throws CSSException {
-				}
-
-				@Override
-				public void startFontFace() throws CSSException {
-					System.out.println("startFontFace");
-				}
-
-				@Override
-				public void startMedia(final SACMediaList arg0) throws CSSException {
-				}
-
-				@Override
-				public void startPage(final String arg0, final String arg1) throws CSSException {
-				}
-
-				@Override
-				public void startSelector(final SelectorList arg0) throws CSSException {
-				}
-			};
-			parser.setDocumentHandler(documentHandler);
-			parser.parseStyleDeclaration(inputSource);
-		}
-		catch (ClassNotFoundException | IllegalAccessException | InstantiationException
-				| NullPointerException | ClassCastException | CSSException | IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static enum Side {
@@ -1073,148 +934,167 @@ public class CSS {
 	}
 
 	public interface Applier {
-		void applyTextAlign(CSSValueImpl cssValueImpl);
+		void applyTextAlign(TermIdent term);
 
-		void applyBackgroundColor(CSSValueImpl cssValueImpl);
+		void applyBackgroundColor(TermColor term);
 
-		void applyPadding(Side side, CSSValueImpl cssValueImpl);
+		void applyPadding(Side side, TermLength term);
 
-		void applyBorder(Side side, CSSValueImpl cssValueImpl);
+		void applyBorder(Side side, List<Term<?>> list);
 
-		void applyBorderWidth(Side side, CSSValueImpl cssValueImpl);
+		void applyBorderWidth(Side side, TermLength term);
 
-		void applyBorderStyle(Side side, CSSValueImpl cssValueImpl);
+		void applyBorderStyle(Side side, TermIdent term);
 
-		void applyBorderColor(Side side, CSSValueImpl cssValueImpl);
+		void applyBorderColor(Side side, TermColor term);
 
-		void applyColor(CSSValueImpl cssValueImpl);
+		void applyColor(TermColor term);
 
-		void applyFontStyle(CSSValueImpl cssValueImpl);
+		void applyFontStyle(TermIdent term);
 
-		void applyFontWeight(CSSValueImpl cssValueImpl);
+		void applyFontWeight(TermIdent term);
 
-		void applyFontSize(CSSValueImpl cssValueImpl);
+		void applyFontSize(Term<?> term);
 
-		void applyFontFamily(CSSValueImpl cssValueImpl);
-	}
-
-	protected static float getColor(final CSSPrimitiveValue primitiveValue) {
-		final short type = primitiveValue.getPrimitiveType();
-		final float value = primitiveValue.getFloatValue(type);
-		// type is ignored;
-		return value;
-	}
-
-	protected static float convertLength(final CSSValueImpl cssValueImpl,
-			final float parentLength) {
-		if (cssValueImpl.getCssValueType() != CSSValue.CSS_PRIMITIVE_VALUE) {
-			System.out.println("expecting primitive value");
-			return 0;
-		}
-		final short type = cssValueImpl.getPrimitiveType();
-		final float value = cssValueImpl.getFloatValue(type);
-		return convertLength(type, value, parentLength);
-	}
-
-	protected static float convertLength(final short type, final float value,
-			final float parentValue) {
-		final Converter converter = LENGTH_CONVERTERS.get(Short.valueOf(type));
-		if (converter == null) {
-			System.err.println("Unrecognized primitive type: " + type + ", " + value);
-			Thread.dumpStack();
-			return 0;
-		}
-		return converter.convert(value, parentValue);
-	}
-
-	protected static interface Converter {
-		float convert(float value, float parentLength);
-	}
-
-	protected static Map<Short, Converter> LENGTH_CONVERTERS;
-	static {
-		final Map<Short, Converter> map = new HashMap<>();
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_PT), (value, parentLength) -> value);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_NUMBER), (value, parentLength) -> value);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_PX),
-			(value, parentLength) -> value * 96.0F / 72.26999F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_PERCENTAGE),
-			(value, parentLength) -> parentLength * value / 100.0F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_EMS),
-			(value, parentLength) -> value * 10.00002F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_EXS),
-			(value, parentLength) -> value * 4.30554F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_MM), (value, parentLength) -> value * 2.84526F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_CM),
-			(value, parentLength) -> value * 28.45274F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_PC), (value, parentLength) -> value * 12F);
-		map.put(Short.valueOf(CSSPrimitiveValue.CSS_IN),
-			(value, parentLength) -> value * 72.26999F);
-		LENGTH_CONVERTERS = map;
-	}
-
-	protected enum BorderStyle {
-		NONE, HIDDEN, DOTTED, DASHED, SOLID, DOUBLE, GROOVE, RIDGE, INSET, OUTSET, INITIAL
-	}
-
-	protected static boolean isBorderStyle(final CSSValueImpl cssValueImpl) {
-		if (cssValueImpl.getPrimitiveType() != CSSPrimitiveValue.CSS_IDENT) {
-			return false;
-		}
-		final String ident = cssValueImpl.getStringValue();
-		for (final BorderStyle borderType : BorderStyle.values()) {
-			if (borderType.name().equalsIgnoreCase(ident)) {
-				return true;
-			}
-		}
-		return false;
+		void applyFontFamily(TermIdent term);
 	}
 
 	protected static class BorderInfo {
-		final CSSValueImpl width;
-		final CSSValueImpl style;
-		final CSSValueImpl color;
+		final TermLength width;
+		final TermIdent style;
+		final TermColor color;
 
-		BorderInfo(final CSSValueImpl cssValueImpl) {
-			CSSValueImpl width = null;
-			CSSValueImpl style = null;
-			CSSValueImpl color = null;
-			if (cssValueImpl != null) {
-				final CSSValueImpl[] values = CSS.getValues(cssValueImpl);
-				for (int i = 0; i < values.length; i++) {
-					final CSSValueImpl value = values[i];
-					if (i == 0) {
-						if (isBorderStyle(value)) {
-							style = value;
-						}
-						else {
-							width = value;
-						}
-					}
-					else if (i == 2) {
-						if (style == null) {
-							style = value;
-						}
-						else {
-							color = value;
-						}
-					}
-					else if (i == 3) {
-						if (color == null) {
-							color = value;
-						}
-						else {
-							System.out.println("Too many values: " + value);
-						}
+		BorderInfo(final List<Term<?>> list) {
+			final TermFactory termFactory = TermFactoryImpl.getInstance();
+			TermLength width = termFactory.createLength(0F, Unit.pt);
+			TermIdent style = termFactory.createIdent("none");
+			TermColor color = termFactory.createColor(0, 0, 0);
+			int i = 0;
+			for (final Term<?> term : list) {
+				if (i == 0) {
+					if (term instanceof TermIdent) {
+						style = (TermIdent) term;
 					}
 					else {
-						System.out.println("Too many values: " + value);
+						width = (TermLength) term;
 					}
 				}
+				else if (i == 2) {
+					if (style == null) {
+						style = (TermIdent) term;
+					}
+					else {
+						color = (TermColor) term;
+					}
+				}
+				else if (i == 3) {
+					if (color == null) {
+						color = (TermColor) term;
+					}
+					else {
+						System.out.println("Too many values: " + term);
+					}
+				}
+				else {
+					System.out.println("Too many values: " + term);
+				}
+				i++;
 			}
 			this.width = width;
 			this.style = style;
 			this.color = color;
 		}
+	}
+
+	private static TermIdent getTermIdent(final List<Term<?>> list, final String defaultValue) {
+		if (list == null || list.isEmpty()) {
+			return TermFactoryImpl.getInstance().createIdent(defaultValue);
+		}
+		if (list.size() > 1) {
+			System.out.println("Additional terms ignored");
+			Thread.dumpStack();
+		}
+		final Term<?> term = list.get(0);
+		if (!(term instanceof TermIdent)) {
+			throw new IllegalArgumentException("Expecting TermIdent");
+		}
+		final TermIdent termIdent = (TermIdent) term;
+		if ("initial".equalsIgnoreCase(termIdent.getValue())) {
+			return TermFactoryImpl.getInstance().createIdent(defaultValue);
+		}
+		return termIdent;
+	}
+
+	private static TermLength getTermLength(final List<Term<?>> list, final float defaultValue,
+			final Unit defaultUnit) {
+		if (list == null || list.isEmpty()) {
+			return TermFactoryImpl.getInstance().createLength(defaultValue, defaultUnit);
+		}
+		if (list.size() > 1) {
+			System.out.println("Additional terms ignored");
+			Thread.dumpStack();
+		}
+		final Term<?> term = list.get(0);
+		if (term instanceof TermIdent) {
+			final TermIdent termIdent = (TermIdent) term;
+			if ("initial".equalsIgnoreCase(termIdent.getValue())) {
+				return TermFactoryImpl.getInstance().createLength(defaultValue, defaultUnit);
+			}
+		}
+		if (!(term instanceof TermLength)) {
+			throw new IllegalArgumentException("Expecting a TermLength");
+		}
+		return (TermLength) term;
+	}
+
+	private static TermLength getTermLength(final List<Term<?>> list, final int index,
+			final float defaultValue, final Unit defaultUnit) {
+		if (list == null || list.size() < index + 1) {
+			return TermFactoryImpl.getInstance().createLength(defaultValue, defaultUnit);
+		}
+		final Term<?> term = list.get(index);
+		if (term instanceof TermIdent) {
+			final TermIdent termIdent = (TermIdent) term;
+			if ("initial".equalsIgnoreCase(termIdent.getValue())) {
+				return TermFactoryImpl.getInstance().createLength(defaultValue, defaultUnit);
+			}
+		}
+		if (!(term instanceof TermLength)) {
+			throw new IllegalArgumentException("Expecting a TermLength");
+		}
+		return (TermLength) term;
+	}
+
+	private static TermColor getTermColor(final List<Term<?>> list, final int red, final int green,
+			final int blue, final int alpha) {
+		if (list == null || list.isEmpty()) {
+			return TermFactoryImpl.getInstance().createColor(red, green, blue, alpha);
+		}
+		if (list.size() > 1) {
+			System.out.println("Additional terms ignored");
+			Thread.dumpStack();
+		}
+		final Term<?> term = list.get(0);
+		if (term instanceof TermIdent) {
+			final TermIdent termIdent = (TermIdent) term;
+			if ("initial".equalsIgnoreCase(termIdent.getValue())) {
+				return TermFactoryImpl.getInstance().createColor(red, green, blue, alpha);
+			}
+		}
+		if (!(term instanceof TermColor)) {
+			throw new IllegalArgumentException("Expecting a TermColor");
+		}
+		return (TermColor) term;
+	}
+
+	private static Term<?> getTerm(final List<Term<?>> list, final Term<?> defaultTerm) {
+		if (list == null || list.isEmpty()) {
+			return defaultTerm;
+		}
+		if (list.size() > 1) {
+			System.out.println("Additional terms ignored");
+			Thread.dumpStack();
+		}
+		return list.get(0);
 	}
 }

@@ -5,4 +5,5 @@
 *.zip
 *.zip.*
 *.backup
+*.log
 target

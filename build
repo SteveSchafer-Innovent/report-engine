@@ -1,0 +1,6 @@
+#!/bin/sh
+if ! mvn clean package > build.log 2> build.err.log; then
+	echo "build failed - see build.log"
+	exit 1
+fi
+./install
